@@ -15,7 +15,11 @@ class CartView(APIView):
     """ 购物车增删查改 """
 
     def perform_authentication(self, request):
-        """重写此方法 直接pass 可以延后认证 延后到第一次通过 request.user 或request.auth才去做认证"""
+        """重写此方法 直接pass 可以延后认证 延后到
+
+
+
+        第一次通过 request.user 或request.auth才去做认证"""
         pass
 
     def post(self, request):
@@ -154,10 +158,6 @@ class CartView(APIView):
 
         return Response(serializer.data)
 
-        def delete(self, request):
-
-            pass
-
     def put(self, request):
         """ 修改 """
         # 创建序列化器
@@ -225,9 +225,9 @@ class CartView(APIView):
 
     def delete(self, request):
         """ 删除 """
-        #创建序列化器
+        # 创建序列化器
         serializer = CartDeleteSerializer(data=request.data)
-        #校验'
+        # 校验'
         serializer.is_valid(raise_exception=True)
         # 获取校验后的数据
         sku_id = serializer.validated_data.get('sku_id')
@@ -247,63 +247,95 @@ class CartView(APIView):
             # 创建管道
             pl = redis_conn.pipeline()
 
-            #删除hash数据
+            # 删除hash数据
             pl.hset('cart_%d' % user.id, sku_id)
-            #删除set数据
+            # 删除set数据
             pl.srem('cart_%d' % user.id, sku_id)
-            #执行管道
+            # 执行管道
             pl.execute()
 
         else:
             """未登录用户操作cookie购物车数据"""
-            #获取cookie 数据
+            # 获取cookie 数据
             cart_str = request.COOKIE.get('cart')
-            #判断是否获取到cookie
+            # 判断是否获取到cookie
             if cart_str:
-                #把cookie的字符串转换成cookie的字典
+                # 把cookie的字符串转换成cookie的字典
                 cart_dict = pickle.dumps(base64.b64decode(cart_str.encode()))
             else:
-                return Response('message':'cookie没有获取到', status=status.HTTP_400_BAD_REQUEST)
+                return Response('message':'cookie没有获取到', status = status.HTTP_400_BAD_REQUEST)
 
-            if sku_id in cart_dict:             # 判断要删除的sku_id 是否在cookie字典中
-                del cart_dict['sku_id']
+                if sku_id in cart_dict:  # 判断要删除的sku_id 是否在cookie字典中
+                    del cart_dict['sku_id']
 
-            if len(cart_dict.keys()):       # 如果字典中还有商品
-                #再把cookie字典转换成cookie字符串
-                cart_str = base64.b64decode(pickle.dumps(cart_dict.decode()))
-                response.set_cookie('cart', cart_str)
+                if len(cart_dict.keys()):  # 如果字典中还有商品
+                    # 再把cookie字典转换成cookie字符串
+                    cart_str = base64.b64decode(pickle.dumps(cart_dict.decode()))
+                    response.set_cookie('cart', cart_str)
+                else:
+                    # 如果购物车数据已经清空了,就删除购物车
+                    return response.delete_cookie('cart')
+
+            return response
+
+    class CartSelectedAllView(APIView):
+        """ 购物车全选 """
+
+        def perform_authentication(self, request):
+            """ 重写此方法延后认证 """
+            pass
+
+        def put(self, request):
+            """购物车全选"""
+            # 创建序列化器
+            serializer = CartSelectedAllSerilizer('cart')
+            # 校验
+            serializer.is_valid(raise_exception=True)
+            # 获取校验后的数据
+            selected = serializer.validated_data.get('selected')
+
+            #
+            try:
+                user = request.user
+            except:
+                user = None
+
+            # 创建响应对象
+            response = Response(serializer.data)
+            if user and user.is_authenticated:
+                """登录用户操作redis"""
+                # 创建redis连接对象---->redis_conn
+                redis_conn = get_redis_connection('cart')
+                # 获取hash字典中所有数据
+                cart_redis_dict = redis_conn.hgetall('cart_%d' % user.id)
+                #   TODO 获取hash字典中所有的key
+                sku_ids = cart_redis_dict.keys()
+                # 判断当前selected是Ture还是False
+                if selected:
+                    # 如果是True把所有sku_id添加到set集合中
+                    redis_conn.sadd('selected_%d' % user.id, *sku_ids)
+                else:
+                    # 如果是False把所有sku_id从set集合中移除
+                    redis_conn.srem('selected_%' % user.id, *sku_ids)
+
             else:
-                #如果购物车数据已经清空了,就删除购物车
-                return response.delete_cookie('cart')
+                """未登录用户操作cookie数据"""
+                # 先获取cookie数据
+                cart_str = request.COOKIE.get('cart')
+                # 判断cookie购物车数据是否有值
+                if cart_str:
+                    cart_dict = pickle.loads(base64.b64decode(cart_str.encode()))
+                else:
+                    # 提前响应
+                    return Response({'message': 'cookie没有数据'}, status=status.HTTP_400_BAD_REQUEST)
 
-        return response
+                # 遍历cookie大字典,根据前端传入的seleted来修改商品的选中状态
+                for sku_id in cart_dict:
+                    cart_dict[sku_id]['selected'] = selected
+                # 再将字典转换成字符串
+                cart_str = base64.b64decode(pickle.dumps(cart_dict).decode())
+                # 设置cookie
+                response.set_cookie('cart', cart_str)
 
-
-
-class CartSelectedAllView(APIView):
-    """ 购物车全选 """
-
-    def perform_authentication(self, request):
-        """ 重写此方法延后认证 """
-        pass
-
-    def put(self, request):
-        """购物车全选"""
-        #创建序列化器
-        serializer = CartSelectedAllSerilizer('cart')
-        #校验
-        serializer.is_valid(raise_exception=True)
-        #获取校验后的数据
-        selected = serializer.validated_data.get('selected')
-
-        #
-        try:
-            user = request.user
-        except:
-            user =None
-
-        # #创建响应对象
-        # response = Response(serializer.data)
-        # if user and user.is_authenticated:
-
-
+            # 响应
+            return response

@@ -1,4 +1,5 @@
 from django.shortcuts import render
+<<<<<<< HEAD
 from rest_framework.views import APIView
 from QQLoginTool.QQtool import OAuthQQ
 from rest_framework.response import Response
@@ -31,7 +32,6 @@ class QQOauthURLView(APIView):
         # oauth = OAuthQQ(client_id=appid, client_secret=appkey, redirect_uri=回调域名, state=记录来源)
         oauth = OAuthQQ(client_id=settings.QQ_CLIENT_ID, client_secret=settings.QQ_CLIENT_SECRET,
                         redirect_url=settings.QQ_REDIRECT_URL, state=next)
-        # 创建QQ工具登录对象
         login_url = oauth.get_qq_url()
         # 调用里面的方法,拼接QQ登录网址
         return Response({'login_url': login_url})
@@ -107,3 +107,7 @@ class QQOauthUserView(APIView):
                 'user_id': user.id,
             }
         )
+=======
+
+# Create your views here.
+>>>>>>> f369839ac033c42f59900b9fee64dd798dc23369

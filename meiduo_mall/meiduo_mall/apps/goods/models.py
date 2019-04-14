@@ -121,6 +121,8 @@ class SKU(BaseModel):
     """
     商品SKU
     """
+    DoesNotExist = None
+    objects = None
     name = models.CharField(max_length=50, verbose_name='名称')
     caption = models.CharField(max_length=100, verbose_name='副标题')
     goods = models.ForeignKey(Goods, on_delete=models.CASCADE, verbose_name='商品')

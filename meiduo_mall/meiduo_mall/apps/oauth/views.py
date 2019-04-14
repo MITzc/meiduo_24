@@ -1,5 +1,5 @@
 from django.shortcuts import render
-<<<<<<< HEAD
+
 from rest_framework.views import APIView
 from QQLoginTool.QQtool import OAuthQQ
 from rest_framework.response import Response
@@ -107,7 +107,4 @@ class QQOauthUserView(APIView):
                 'user_id': user.id,
             }
         )
-=======
 
-# Create your views here.
->>>>>>> f369839ac033c42f59900b9fee64dd798dc23369

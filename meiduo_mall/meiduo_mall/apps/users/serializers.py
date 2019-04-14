@@ -9,7 +9,6 @@ from celery_tasks.email.tasks import send_verify_email
 from goods.models import SKU
 
 
-
 class CreateUserSerializer(serializers.ModelSerializer):
     """ 注册序列化器 """
     # 序列化器的所有字段: ['id', 'username', 'password', 'password2', 'mobile', 'sms_code', 'allow']
@@ -167,7 +166,6 @@ class AddressTitleSerializer(serializers.ModelSerializer):
         fields = ('title',)
 
 
-
 class UserBrowserHistorySerializer(serializers.Serializer):
     """ 保存商品浏览记录序列化器 """
 
@@ -184,10 +182,29 @@ class UserBrowserHistorySerializer(serializers.Serializer):
         sku_id = validated_data.get('sku_id')
         # 获取当前的用户模型对象
         user = self.context['request'].user
-        #
+        # 创建redis连接对象
+        redis_conn = get_redis_connection('history')
+
+        # 创建redis管道
+        pl = redis_conn.pipeline()
+
+        # 先去重
+        pl.lrem('history_%d' % user.id, 0, sku_id)
+
+        # 再添加到列表的开头
+        pl.lpush('history_%d' % user.id, sku_id)
+
+        # 再截取列表中前5个元素
+        pl.ltrim('history_%d' % user.id, 0, 4)
+        # 执行管道
+        pl.execute()
+
+        return validated_data
 
 
+class SKUSerializer(serializers.ModelSerializer):
+    """sku商品序列化器"""
 
-
-
-
+    class Meta:
+        model = SKU
+        fields = ['id', 'name', 'price', 'default_image_url', 'comments']

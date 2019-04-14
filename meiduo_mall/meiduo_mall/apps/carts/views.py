@@ -207,7 +207,7 @@ class CartView(APIView):
                 cart_dict = pickle.dumps(base64.b64decode(cart_str.encode()))
             else:
                 # 如果cookie没有取到,提前响应,不执行后续代码
-                return Response('message':'没有获取到cookie', status = status.HTTP_400_BAD_REQUEST)
+                return Response({'message':'没有获取到cookie'}, status = status.HTTP_400_BAD_REQUEST)
 
                 # 直接覆盖原cookie 字典数据
                 cart_dict[sku_id] = {
@@ -263,7 +263,7 @@ class CartView(APIView):
                 # 把cookie的字符串转换成cookie的字典
                 cart_dict = pickle.dumps(base64.b64decode(cart_str.encode()))
             else:
-                return Response('message':'cookie没有获取到', status = status.HTTP_400_BAD_REQUEST)
+                return Response({'message':'cookie没有获取到'}, status = status.HTTP_400_BAD_REQUEST)
 
                 if sku_id in cart_dict:  # 判断要删除的sku_id 是否在cookie字典中
                     del cart_dict['sku_id']

@@ -9,6 +9,7 @@ from rest_framework import status
 from meiduo_mall.libs.yuntongxun.sms import CCP
 from . import constants
 from celery_tasks.sms.tasks import send_sms_code
+
 logger = logging.getLogger('django')
 
 
@@ -24,17 +25,17 @@ class SMSCodeView(APIView):
         # 3. 如果取到了标记,说明此手机频繁发送短信
 
         if send_flag:
-            return Response({'message':'手机频繁发送短信'}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({'message': '手机频繁发送短信'}, status=status.HTTP_400_BAD_REQUEST)
 
         # 4. 生成短信验证码
         sms_code = '%06d' % randint(0, 999999)
         logger.info(sms_code)
 
-        #创建redis管道:(把多次redis操作装入管道中,将来一次性执行,减少redis连接操作)
+        # 创建redis管道:(把多次redis操作装入管道中,将来一次性执行,减少redis连接操作)
         pl = redis_conn.pipeline()
         # 5. 把短信验证码存到redis数据库
         # redis_conn.setex('sms_%s' % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
-        pl.setex('sms_%s' % mobile, constants.SMS_CODE_REDIS_EXPIRES , sms_code)
+        pl.setex('sms_%s' % mobile, constants.SMS_CODE_REDIS_EXPIRES, sms_code)
 
         # 6. 存储一个标记,表示此手机号已经发送国短信,标记有效期60s
         # redis_conn.setex('send_flag_%s' % mobile, constants.SEND_SMS_CODE_INTERVAL, 1)
@@ -48,9 +49,7 @@ class SMSCodeView(APIView):
         # CCP().send_template_sms(mobile, [sms_code, constants.SMS_CODE_REDIS_EXPIRES // 60], 1)
         # 触发异步任务,将异步任务添加到celery任务队列
         # send_sms_code(mobile, sms_code)  # 调用普通函数而已
-        send_sms_code.delay(mobile, sms_code)       # 触发异步任务
+        send_sms_code.delay(mobile, sms_code)  # 触发异步任务
 
         # 响应
-        return Response({'message':'OK'})
-
-
+        return Response({'message': 'OK'})

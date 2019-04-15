@@ -8,6 +8,10 @@ from rest_framework import status
 from rest_framework.mixins import UpdateModelMixin
 from rest_framework.viewsets import GenericViewSet
 from django_redis import get_redis_connection
+from rest_framework_jwt.views import ObtainJSONWebToken
+from rest_framework_jwt.settings import api_settings
+
+
 
 from .models import User, Address
 from .serializers import UserDetailSerializer, EmailSerializers, UserAddressSerializer, UserBrowserHistorySerializer,CreateUserSerializer, AddressTitleSerializer
@@ -209,6 +213,23 @@ class UserBrowserHistoryView(CreateAPIView):
 
         # 响应
         return Response(serializer.data)
+
+
+
+class UserAuthorizeView(ObtainJSONWebToken):
+    """自定义账号密码登录视图,实现购物车登录合并"""
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+
+        if serializer.is_valid():
+            user = serializer.object.get('user') or request.user
+            token = serializer.object.get('token')
+            response_data= jwt_response_payload_hendel(token, user, request)
+            response = Response(response_data)
+            if api_settings.JWT_AUTH_COOKIE:
+
+
+
 
 
 

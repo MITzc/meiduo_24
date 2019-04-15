@@ -1,6 +1,6 @@
 from django.db import models
 
-<<<<<<< HEAD
+
 from users.models import User
 from meiduo_mall.utils.models import BaseModel
 
@@ -18,6 +18,4 @@ class OAuthQQUser(BaseModel):
         db_table = 'tb_oauth_qq'
         verbose_name = "QQ登录用户数据"
         verbose_name_plural = verbose_name
-=======
-# Create your models here.
->>>>>>> f369839ac033c42f59900b9fee64dd798dc23369
+

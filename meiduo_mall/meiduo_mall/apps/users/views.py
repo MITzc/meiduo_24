@@ -10,12 +10,12 @@ from rest_framework.viewsets import GenericViewSet
 from django_redis import get_redis_connection
 from rest_framework_jwt.views import ObtainJSONWebToken
 from rest_framework_jwt.settings import api_settings
-
+from datetime import datetime
 
 
 from .models import User, Address
 from .serializers import UserDetailSerializer, EmailSerializers, UserAddressSerializer, UserBrowserHistorySerializer,CreateUserSerializer, AddressTitleSerializer
-
+from carts.utils import
 
 
 

@@ -1,9 +1,9 @@
 from rest_framework import serializers
-import datetime
+from django.utils.datetime_safe import datetime
+# import datetime
 from django.db import transaction
 from django_redis import get_redis_connection
 from decimal import Decimal
-
 
 from goods.models import SKU
 from .models import OrderGoods, OrderInfo
@@ -24,14 +24,13 @@ class OrderSettlementSerializer(serializers.Serializer):
     freight = serializers.DecimalField(label='运费', max_digits=10, decimal_places=2)
 
 
-
 class CommitOrderSerializer(serializers.ModelSerializer):
     """保存订单序列化器"""
 
     class Meta:
         model = OrderInfo
         fields = ['address', 'pay_method', 'order_id']
-        read_only_fields = ['order_id']         #只作序列化输出,不做反序列化
+        read_only_fields = ['order_id']  # 只作序列化输出,不做反序列化
         extra_kwargs = {
             'address': {'write_only': True},
             'pay_method': {'write_only': True},
@@ -42,14 +41,13 @@ class CommitOrderSerializer(serializers.ModelSerializer):
             """保存订单"""
             """获取当前保存订单需要的信息"""
 
-
             # 获取用户对象
             user = self.context.['request'].user
-            #生成订单编号
+            # 生成订单编号
             order_id = datetime.now().strftime('%Y%m%d%H%M%S') + '%09d' % user.id
-            #获取前端传入的收获地址
+            # 获取前端传入的收获地址
             address = validated_data.get('address')
-            #获取前端传入的支付方式
+            # 获取前端传入的支付方式
             pay_method = validated_data.get('pay_method')
 
             # 订单状态          TODO   ?????
@@ -74,20 +72,23 @@ class CommitOrderSerializer(serializers.ModelSerializer):
                         status=status
                     )
 
-                    #从redis读取购物车被勾选的商品信息
-                    #创建redis连接对象
+                    # 从redis读取购物车被勾选的商品信息
+                    # 创建redis连接对象
                     redis_conn = get_redis_connection('cart')
-                    #把redis中hash 和 set 数据全部获取出来
+                    # 把redis中hash 和 set 数据全部获取出来
                     cart_dict_bytes = redis_conn.hgetall('cart_%' % user.id)
                     selected = redis_conn.smembers('selected_%d' % user.id)
 
                     # 遍历购物车中被勾选的商品
                     for sku_id_bytes in selected_ids:
-                        #获取sku对象
+
+                        while True:  # 让一个用户对一个商品有无限次下单的机会,直到库存真的不足为止
+
+                        # 获取sku对象
                         sku = SKU.objects.filter(id=sku_id_bytes)
-                        #把当前sku模型中库存和销量分别先取出来
-                        origin_sales = sku.sels     #获取要购买商品的原有销量
-                        origin_stock = sku.stock    #获取当前购买商品的原库存
+                        # 把当前sku模型中库存和销量分别先取出来
+                        origin_sales = sku.sels  # 获取要购买商品的原有销量
+                        origin_stock = sku.stock  # 获取当前购买商品的原库存
 
                         import time
                         time.sleep(5)
@@ -122,26 +123,25 @@ class CommitOrderSerializer(serializers.ModelSerializer):
                         orderInfo.total_count += buy_count
                         orderInfo.total_amount += (sku.price * buy_count)
 
+                        break  # 当前这个商品下单成功,跳出死循环,进行一个商品继续下单
+
                         # 最后加入邮费和保存订单信息
                     orderInfo.total_amount += orderInfo.freight
                     orderInfo.save()
 
                 except Exception:
-                # 进行暴力回滚
-                transaction.savepoint_rollback(save_point)
-                raise serializers.ValidationError('库存不足')  # 此行代码不能少 ,不然订单提交失败,前端界面依然正常
+                    # 进行暴力回滚
+                    transaction.savepoint_rollback(save_point)
+                    raise serializers.ValidationError('库存不足')  # 此行代码不能少 ,不然订单提交失败,前端界面依然正常
 
-            else:
-            transaction.savepoint_commit(save_point)  # 如果中间没有出现任何问题,就提交事务
+                else:
+                    transaction.savepoint_commit(save_point)  # 如果中间没有出现任何问题,就提交事务
 
             # 清除购物车中已结算的商品
+            pl = redis_conn.pipeline()
+            pl.hdel('cart_%d' % user.di, *selected_id)
+            pl.srem('selected_%d' % user.id, *selected_id)
+            pl.execute()
 
             # 返回订单模型对象
-
-
-        return orderInfo
-
-
-
-
-
+            return orderInfo

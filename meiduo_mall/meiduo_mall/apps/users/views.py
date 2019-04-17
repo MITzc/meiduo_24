@@ -13,10 +13,11 @@ from rest_framework_jwt.settings import api_settings
 from datetime import datetime
 
 
-from .models import User, Address
-from .serializers import UserDetailSerializer, EmailSerializers, UserAddressSerializer, UserBrowserHistorySerializer,CreateUserSerializer, AddressTitleSerializer
-from carts.utils import
 
+from goods.models import SKU
+from .models import User, Address
+from .serializers import UserDetailSerializer, EmailSerializers, UserAddressSerializer, UserBrowserHistorySerializer,CreateUserSerializer, AddressTitleSerializer, SKUSerializer
+from carts.utils import merge_carts_cookie_to_redis
 
 
 # Create your views here.
@@ -102,7 +103,7 @@ class EmailVerifyView(APIView):
         return Response({'message':'OK'})
 
 
-class UserAddress(UpdateModelMixin, GenericViewSet):
+class AddressViewSet(UpdateModelMixin, GenericViewSet):
     """用户收获地址增删查改"""
 
     permission_classes = [IsAuthenticated]
@@ -141,7 +142,7 @@ class UserAddress(UpdateModelMixin, GenericViewSet):
             'address':serializer.data,
         })
 
-    def destory(self, request, *args, **kwargs):
+    def destroy(self, request, *args, **kwargs):
         """删除"""
 
         address = self.get_object()
@@ -181,6 +182,7 @@ class UserAddress(UpdateModelMixin, GenericViewSet):
         request.user.default_address = address
         request.user.save()
         return Response({'message': 'OK'}, status=status.HTTP_200_OK)
+
 
 class UserBrowserHistoryView(CreateAPIView):
     """用户商品浏览记录"""
@@ -227,6 +229,18 @@ class UserAuthorizeView(ObtainJSONWebToken):
             response_data= jwt_response_payload_hendel(token, user, request)
             response = Response(response_data)
             if api_settings.JWT_AUTH_COOKIE:
+                expiration = (datetime.utcnow() +
+                              api_settings.JWT_EXPIRATION_DELTA)
+                response.set_cookie(api_settings.JWT_AUTH_COOKIE,
+                                    token,
+                                    expires=expiration,
+                                    httponly=True)
+            # 账号登录时合并购物车
+            merge_carts_cookie_to_redis(request, user, response)
+
+            return response
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 

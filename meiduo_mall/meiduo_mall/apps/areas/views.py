@@ -28,7 +28,7 @@ from .serializers import AreaSerializers, SubsSerializers
 
 
 
-class AreaViewSet(AreaSerializers, SubsSerializers):
+class AreaViewSet(CacheResponseMixin, ReadOnlyModelViewSet):
 
     # 指定查询集
     def get_queryset(self):
@@ -41,7 +41,7 @@ class AreaViewSet(AreaSerializers, SubsSerializers):
     #指定序列化器
    # serializer_class =
     def get_serializer_class(self):
-        if self.action = 'list':
+        if self.action == 'list':
             return AreaSerializers
         else:
             return SubsSerializers

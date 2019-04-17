@@ -14,19 +14,19 @@ var vm = new Vue({
         sending_flag: false, // 正在发送短信标志
 
         password: '',
-        mobile: '',
+        mobile: '', 
         sms_code: '',
         access_token: ''
     },
-    mounted: function () {
+    mounted: function(){  // mounted 当对应的html代码加载完成后就会自动调用 mounted中的方法
         // 从路径中获取qq重定向返回的code
         var code = this.get_query_string('code');
         axios.get(this.host + '/oauth/qq/user/?code=' + code, {
-            responseType: 'json',
-            withCredentials: true
-        })
+                responseType: 'json',
+                withCredentials: true  // 跨域允许携带cookie
+            })
             .then(response => {
-                if (response.data.user_id) {
+                if (response.data.user_id){
                     // 用户已绑定
                     sessionStorage.clear();
                     localStorage.clear();
@@ -49,8 +49,8 @@ var vm = new Vue({
             })
     },
     methods: {
-        // 获取url路径参数
-        get_query_string: function (name) {
+        // 获取url路径参数    
+        get_query_string: function(name){ 
             var reg = new RegExp('(^|&)' + name + '=([^&]*)(&|$)', 'i');
             var r = window.location.search.substr(1).match(reg);
             if (r != null) {
@@ -58,25 +58,38 @@ var vm = new Vue({
             }
             return null;
         },
-        check_pwd: function () {
+        // 生成uuid
+        generate_uuid: function(){
+            var d = new Date().getTime();
+            if(window.performance && typeof window.performance.now === "function"){
+                d += performance.now(); //use high-precision timer if available
+            }
+            var uuid = 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
+                var r = (d + Math.random()*16)%16 | 0;
+                d = Math.floor(d/16);
+                return (c =='x' ? r : (r&0x3|0x8)).toString(16);
+            });
+            return uuid;
+        },
+        check_pwd: function (){
             var len = this.password.length;
-            if (len < 8 || len > 20) {
+            if(len<8||len>20){
                 this.error_password = true;
             } else {
                 this.error_password = false;
-            }
+            }        
         },
-        check_phone: function () {
+        check_phone: function (){
             var re = /^1[345789]\d{9}$/;
-            if (re.test(this.mobile)) {
+            if(re.test(this.mobile)) {
                 this.error_phone = false;
             } else {
                 this.error_phone_message = '您输入的手机号格式不正确';
                 this.error_phone = true;
             }
         },
-        check_sms_code: function () {
-            if (!this.sms_code) {
+        check_sms_code: function(){
+            if(!this.sms_code){
                 this.error_sms_code_message = '请填写短信验证码';
                 this.error_sms_code = true;
             } else {
@@ -84,14 +97,10 @@ var vm = new Vue({
             }
         },
         // 发送手机短信验证码
-        send_sms_code: function () {
-
-            // 重新发送短信后，隐藏提示信息
-            this.error_sms_code = false;
-
+        send_sms_code: function(){
             if (this.sending_flag == true) {
                 return;
-            }
+            } 
             this.sending_flag = true;
 
             // 校验参数，保证输入框有数据填写
@@ -104,8 +113,8 @@ var vm = new Vue({
 
             // 向后端接口发送请求，让后端发送短信验证码
             axios.get(this.host + '/sms_codes/' + this.mobile + '/', {
-                responseType: 'json'
-            })
+                    responseType: 'json'
+                })
                 .then(response => {
                     // 表示后端发送短信成功
                     // 倒计时60秒，60秒后允许用户再次点击发送短信验证码的按钮
@@ -138,20 +147,21 @@ var vm = new Vue({
                 })
         },
         // 保存
-        on_submit: function () {
+        on_submit: function(){
             this.check_pwd();
             this.check_phone();
             this.check_sms_code();
 
-            if (this.error_password == false && this.error_phone == false && this.error_sms_code == false) {
+            if(this.error_password == false && this.error_phone == false && this.error_sms_code == false) {
                 axios.post(this.host + '/oauth/qq/user/', {
-                    password: this.password,
-                    mobile: this.mobile,
-                    sms_code: this.sms_code,
-                    access_token: this.access_token
-                }, {
-                    responseType: 'json',
-                })
+                        password: this.password,
+                        mobile: this.mobile,
+                        sms_code: this.sms_code,
+                        access_token: this.access_token
+                    }, {
+                        responseType: 'json',
+                        withCredentials: true
+                    })
                     .then(response => {
                         // 记录用户登录状态
                         sessionStorage.clear();
@@ -161,7 +171,7 @@ var vm = new Vue({
                         localStorage.username = response.data.username;
                         location.href = this.get_query_string('state');
                     })
-                    .catch(error => {
+                    .catch(error=> {
                         if (error.response.status == 400) {
                             this.error_sms_code_message = error.response.data.message;
                             this.error_sms_code = true;

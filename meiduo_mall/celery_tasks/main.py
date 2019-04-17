@@ -1,8 +1,8 @@
 from celery import Celery
-from os
+import os
 
 # 告诉celery 如果需要使用django的配置文件因该去哪里加载
-os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'meiduo_mall.setting.dev')
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'meiduo_mall.settings.dev')
 
 # 创建celery实例例
 celery_app = Celery('meiduo')

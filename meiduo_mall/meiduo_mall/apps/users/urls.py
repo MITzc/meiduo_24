@@ -28,6 +28,6 @@ urlpatterns = [
     url(r'^browse_histories/$', views.UserBrowserHistoryView.as_view())
 ]
 
-route = routers.DefaultRouters()
-routers.register(r'address', views.AddressViewSet, base_name='addresses')
-urlpatterns += routers.urls
+router = routers.DefaultRouter()
+router.register(r'addresses', views.AddressViewSet, base_name='addresses')
+urlpatterns += router.urls

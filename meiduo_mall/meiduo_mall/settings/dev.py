@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'oauth.apps.OauthConfig',  # QQ模块
     'areas.apps.AreasConfig',  # 区域模块
     'goods.apps.GoodsConfig',  # 商品模块
+    'orders.apps.OrdersConfig',   #订单模块
     'contents.apps.ContentsConfig',  # 广告模块
     'payment.apps.PaymentConfig'    #支付模块
 ]
@@ -293,7 +294,7 @@ REST_FRAMEWORK_EXTENSIONS = {
 DEFAULT_FILE_STORAGE = 'meiduo_mall.utils.fastdfs.fdfs_storage.FastDFSStorage'
 
 # FastDFS
-FDFS_URL = 'http://image.meiduo.site:8888/'
+FDFS_BASE_URL = 'http://127.0.0.1:8888/'
 FDFS_CLIENT_CONF = os.path.join(BASE_DIR, 'utils/fastdfs/client.conf')
 
 # 富文本编辑器ckeditor配置

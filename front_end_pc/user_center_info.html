@@ -73,7 +73,7 @@
                             <input @click="set_email=false" type="reset" name="" value="取 消">
                             <div v-if="email_error">邮箱格式错误</div>
                         </div>
-                        <div v-else-if="email" class="xx">
+                        <div v-else-if="email">
                             {{ email }}
                             <div v-if="email_active">已验证</div>
                             <div v-else>

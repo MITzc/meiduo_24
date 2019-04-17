@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework import status
 from alipay import AliPay
 from django.conf import settings
-from os
+import os
 from alipay import AliPay
 
 
@@ -81,7 +81,8 @@ class PaymentStatusView(AliPay):
         # 将sign这个数据从字典中移除
         sign = data.pop('sign')
 
-        # 创建alipay支付宝对象
+        # 创建alipay支付宝对象s
+
         alipay = AliPay(
             appid=settings.ALIPAY_APPID,
             app_notify_url=None,  # 默认回调url

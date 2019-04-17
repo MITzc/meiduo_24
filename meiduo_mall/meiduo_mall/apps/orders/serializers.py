@@ -1,6 +1,5 @@
 from rest_framework import serializers
 from django.utils.datetime_safe import datetime
-# import datetime
 from django.db import transaction
 from django_redis import get_redis_connection
 from decimal import Decimal
@@ -42,7 +41,7 @@ class CommitOrderSerializer(serializers.ModelSerializer):
             """获取当前保存订单需要的信息"""
 
             # 获取用户对象
-            user = self.context.['request'].user
+            user = self.context['request'].user
             # 生成订单编号
             order_id = datetime.now().strftime('%Y%m%d%H%M%S') + '%09d' % user.id
             # 获取前端传入的收获地址
@@ -76,54 +75,58 @@ class CommitOrderSerializer(serializers.ModelSerializer):
                     # 创建redis连接对象
                     redis_conn = get_redis_connection('cart')
                     # 把redis中hash 和 set 数据全部获取出来
-                    cart_dict_bytes = redis_conn.hgetall('cart_%' % user.id)
-                    selected = redis_conn.smembers('selected_%d' % user.id)
+                    cart_dict_redis = redis_conn.hgetall('cart_%' % user.id)
+                    selected_ids = redis_conn.smembers('selected_%d' % user.id)
 
                     # 遍历购物车中被勾选的商品
                     for sku_id_bytes in selected_ids:
 
                         while True:  # 让一个用户对一个商品有无限次下单的机会,直到库存真的不足为止
 
-                        # 获取sku对象
-                        sku = SKU.objects.filter(id=sku_id_bytes)
-                        # 把当前sku模型中库存和销量分别先取出来
-                        origin_sales = sku.sels  # 获取要购买商品的原有销量
-                        origin_stock = sku.stock  # 获取当前购买商品的原库存
+                            # 获取sku对象
+                            sku = SKU.objects.filter(id=sku_id_bytes)
 
-                        import time
-                        time.sleep(5)
+                            # 获取当前商品的购买数量
+                            buy_count = int(cart_dict_redis[sku_id_bytes])
 
-                        # 判断库存 
-                        if buy_count > origin_stock:
-                            raise serializers.ValidationError('库存不足')
+                            # 把当前sku模型中库存和销量分别先取出来
+                            origin_sales = sku.sels  # 获取要购买商品的原有销量
+                            origin_stock = sku.stock  # 获取当前购买商品的原库存
 
-                        # 减少库存，增加销量 SKU 
-                        # 计算新的库存和销量
-                        new_sales = origin_sales + buy_count
-                        new_stock = origin_stock - buy_count
+                            import time
+                            time.sleep(5)
 
-                        sku.sales = new_sales  # 修改sku模型的销量
-                        sku.stock = new_stock  # 修改sku模型的库存
-                        sku.save()
+                            # 判断库存 
+                            if buy_count > origin_stock:
+                                raise serializers.ValidationError('库存不足')
 
-                        # 修改SPU销量
-                        spu = sku.goods
-                        spu.sales = spu.sales + buy_count
-                        spu.save()
+                            # 减少库存，增加销量 SKU 
+                            # 计算新的库存和销量
+                            new_sales = origin_sales + buy_count
+                            new_stock = origin_stock - buy_count
 
-                        # 保存订单商品信息 OrderGoods（多）
-                        OrderGoods.objects.create(
-                            order=orderInfo,
-                            sku=sku,
-                            count=buy_count,
-                            price=sku.price,
-                        )
+                            sku.sales = new_sales  # 修改sku模型的销量
+                            sku.stock = new_stock  # 修改sku模型的库存
+                            sku.save()
 
-                        # 累加计算总数量和总价 11
-                        orderInfo.total_count += buy_count
-                        orderInfo.total_amount += (sku.price * buy_count)
+                            # 修改SPU销量
+                            spu = sku.goods
+                            spu.sales = spu.sales + buy_count
+                            spu.save()
 
-                        break  # 当前这个商品下单成功,跳出死循环,进行一个商品继续下单
+                            # 保存订单商品信息 OrderGoods（多）
+                            OrderGoods.objects.create(
+                                order=orderInfo,
+                                sku=sku,
+                                count=buy_count,
+                                price=sku.price,
+                            )
+
+                            # 累加计算总数量和总价 11
+                            orderInfo.total_count += buy_count
+                            orderInfo.total_amount += (sku.price * buy_count)
+
+                            break  # 当前这个商品下单成功,跳出死循环,进行一个商品继续下单
 
                         # 最后加入邮费和保存订单信息
                     orderInfo.total_amount += orderInfo.freight
@@ -139,8 +142,8 @@ class CommitOrderSerializer(serializers.ModelSerializer):
 
             # 清除购物车中已结算的商品
             pl = redis_conn.pipeline()
-            pl.hdel('cart_%d' % user.di, *selected_id)
-            pl.srem('selected_%d' % user.id, *selected_id)
+            pl.hdel('cart_%d' % user.di, *selected_ids)
+            pl.srem('selected_%d' % user.id, *selected_ids)
             pl.execute()
 
             # 返回订单模型对象

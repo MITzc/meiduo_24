@@ -116,7 +116,7 @@ class EmailSerializers(serializers.ModelSerializer):
             }
         }
 
-    def update(self, instance, validated_data)
+    def update(self, instance, validated_data):
         """ 重写此方法不是为了修改,为了借此时机发送激活邮箱 """
         instance.email = validated_data.get('email')
         instance.save()

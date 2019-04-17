@@ -15,7 +15,6 @@ def generate_statick_list_search_html():
     """
 
     # 商品分类菜单
-
     categories = get_categories()
 
     #渲染模板,生成静态html文件

@@ -762,8 +762,7 @@ html,body{height:100%}
 .cart_list_td .col02 img{width:100px;height:100px;border:1px solid #ddd;display:block;margin:10px auto 0;}
 .cart_list_td .col03{height:48px;text-align:left;line-height:24px;margin-top:38px;}
 .cart_list_td .col03 em{color:#999}
-.cart_list_td .col08 a{color:#666;cursor:pointer;}
-.cart_list_td .col08 a:hover{color: red;}
+.cart_list_td .col08 a{color:#666}
 
 .cart_list_td .col06 .num_add{width:98px;height:28px;border:1px solid #ddd;margin:40px auto 0;}
 .cart_list_td .col06 .num_add a{width:29px;height:28px;line-height:28px;background-color:#f3f3f3;font-size:14px;color:#666}
@@ -949,9 +948,7 @@ html,body{height:100%}
 	float:left;
 	text-align:right;
 }
-.user_info_list li .xx div{
-	display: inline-block;
-}
+
 .info_con{
 	width:980px;
 }

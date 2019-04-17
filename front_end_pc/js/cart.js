@@ -42,7 +42,7 @@ var vm = new Vue({
     },
     mounted: function(){
         // 获取购物车数据
-        axios.get(this.host+'/cart/', {
+        axios.get(this.host+'/carts/', {
                 headers: {
                     'Authorization': 'JWT ' + this.token
                 },
@@ -80,7 +80,7 @@ var vm = new Vue({
         // 购物车全选 
         on_selected_all: function(){
             var selected = !this.selected_all;
-            axios.put(this.host + '/cart/selection/', {
+            axios.put(this.host + '/carts/selection/', {
                     selected
                 }, {
                     responseType: 'json',
@@ -100,7 +100,7 @@ var vm = new Vue({
         },
         // 删除购物车数据
         on_delete: function(index){
-            axios.delete(this.host+'/cart/', {
+            axios.delete(this.host+'/carts/', {
                     data: {
                         sku_id: this.cart[index].id
                     },
@@ -124,7 +124,7 @@ var vm = new Vue({
                 this.cart[index].count = this.origin_input;
             } else {
                 // 更新购物车数据
-                axios.put(this.host+'/cart/', {
+                axios.put(this.host+'/carts/', {
                         sku_id: this.cart[index].id,
                         count: val,
                         selected: this.cart[index].selected
@@ -151,7 +151,7 @@ var vm = new Vue({
         },
         // 更新购物车数据
         update_count: function(index, count){
-            axios.put(this.host+'/cart/', {
+            axios.put(this.host+'/carts/', {
                     sku_id: this.cart[index].id,
                     count,
                     selected: this.cart[index].selected
@@ -176,7 +176,7 @@ var vm = new Vue({
         },
         // 更新购物车数据
         update_selected: function(index) {
-            axios.put(this.host+'/cart/', {
+            axios.put(this.host+'/carts/', {
                     sku_id: this.cart[index].id,
                     count: this.cart[index].count,
                     selected: this.cart[index].selected
